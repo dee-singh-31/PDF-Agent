@@ -1,5 +1,5 @@
 import sys
-
+from pdf_agent.application.expiry_validator import ExpiryCandidateValidator
 from pdf_agent.application.expiry_service import (
     ExpiryExtractionService,
 )
@@ -15,17 +15,24 @@ def main():
         return
 
     pdf_path = sys.argv[1]
+    validator = ExpiryCandidateValidator()
 
     service = ExpiryExtractionService(
         pdf_reader=PdfTextReader(),
         ocr=TesseractOCR(),
         llm=OllamaLLM(),
+        validator=validator,
     )
 
     result = service.extract(pdf_path)
 
-    print(result)
+    if result.expiry_date:
+        print(f"Expiry Date: {result.expiry_date}")
+    else:
+        print("Expiry Date: Not found")
 
-
+    if result.reasoning:
+        print(f"Reasoning: {result.reasoning}")
+    
 if __name__ == "__main__":
     main()

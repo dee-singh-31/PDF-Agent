@@ -3,10 +3,13 @@ from datetime import date
 
 
 @dataclass
-class ExpiryExtraction:
+class ExpiryCandidate:
+    expiry_date: date
+    reasoning: str
+    source_text: str
+
+
+@dataclass
+class ExtractionResult:
     expiry_date: date | None
     reasoning: str | None
-    confidence: float
-    source_page: int | None
-    raw_value: str | None
-    method: str
