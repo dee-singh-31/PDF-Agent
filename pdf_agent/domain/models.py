@@ -3,10 +3,17 @@ from datetime import date
 
 
 @dataclass
+class DocumentPage:
+    page_number: int
+    text: str
+
+
+@dataclass
 class ExpiryCandidate:
     expiry_date: date
     reasoning: str
     source_text: str
+    page_number: int | None = None
 
 
 @dataclass

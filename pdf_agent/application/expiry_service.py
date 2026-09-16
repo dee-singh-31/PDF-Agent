@@ -1,30 +1,50 @@
-from pdf_agent.domain.models import ExtractionResult
+from pdf_agent.application.ports.candidate_extractor import CandidateExtractor
+from pdf_agent.application.ports.llm import LLM
+from pdf_agent.application.ports.ocr import OCR
+from pdf_agent.application.ports.pdf_reader import PDFReader
 from pdf_agent.application.expiry_validator import ExpiryCandidateValidator
+from pdf_agent.domain.models import ExtractionResult
 
 
 class ExpiryExtractionService:
-    def __init__(self, pdf_reader, ocr, llm, validator):
+
+    def __init__(
+        self,
+        pdf_reader: PDFReader,
+        ocr: OCR,
+        llm: LLM,
+        validator: ExpiryCandidateValidator,
+        date_extractor: CandidateExtractor,
+    ):
         self.pdf_reader = pdf_reader
         self.ocr = ocr
         self.llm = llm
         self.validator = validator
+        self.date_extractor = date_extractor
 
     def extract(self, pdf_path: str) -> ExtractionResult:
-        text = self.pdf_reader.read(pdf_path)
+        pages = self.pdf_reader.read(pdf_path)
 
-        if not text:
-            text = self.ocr.extract(pdf_path)
+        has_text = any(page.text for page in pages)
 
-        if not text:
-            raise ValueError("Could not extract readable text from PDF")
+        if not has_text:
+            pages = self.ocr.extract(pdf_path)
 
-        candidates = self.llm.extract_expiry(text)
+        has_text = any(page.text for page in pages)
+
+        if not has_text:
+            raise ValueError(
+                "Could not extract readable text from PDF"
+            )
+
+        candidates = []
+
+        for page in pages:
+            page_candidates = self.date_extractor.extract(page)
+            candidates.extend(page_candidates)
 
         if not candidates:
-            return ExtractionResult(
-                expiry_date=None,
-                reasoning="No expiry date was found",
-            )
+            candidates = self.llm.extract_expiry(pages)
 
         best_candidate = self.validator.select_best(candidates)
 
