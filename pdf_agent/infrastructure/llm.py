@@ -115,6 +115,7 @@ Document:
                     reasoning=reasoning,
                     source_text=source_text,
                     page_number=page_number,
+                    extraction_method="llm",
                 )
             )
 

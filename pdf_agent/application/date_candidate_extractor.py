@@ -45,6 +45,7 @@ class DateCandidateExtractor(CandidateExtractor):
                         ),
                         source_text=match.group(0),
                         page_number=page.page_number,
+                        extraction_method="rule",
                     )
                 )
 
