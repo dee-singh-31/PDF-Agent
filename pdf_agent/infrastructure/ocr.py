@@ -2,6 +2,7 @@ from pdf2image import convert_from_path
 import pytesseract
 
 from pdf_agent.application.ports.ocr import OCR
+from pdf_agent.domain.exceptions import DocumentReadError
 from pdf_agent.domain.models import DocumentPage
 
 
@@ -16,10 +17,15 @@ class TesseractOCR(OCR):
         if self.poppler_path:
             kwargs["poppler_path"] = self.poppler_path
 
-        images = convert_from_path(
-            pdf_path,
-            **kwargs,
-        )
+        try:
+            images = convert_from_path(
+                pdf_path,
+                **kwargs,
+            )
+        except Exception as exc:
+            raise DocumentReadError(
+                f"Could not rasterize PDF for OCR: {pdf_path}"
+            ) from exc
 
         pages = []
 

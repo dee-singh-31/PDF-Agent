@@ -5,6 +5,7 @@ import pytest
 from pdf_agent.application.agent import ExpiryAgent
 from pdf_agent.application.date_candidate_extractor import DateCandidateExtractor
 from pdf_agent.application.expiry_validator import ExpiryCandidateValidator
+from pdf_agent.domain.exceptions import UnreadableDocumentError
 from pdf_agent.domain.models import DocumentPage, ExpiryCandidate
 
 FUTURE = date.today() + timedelta(days=30)
@@ -124,5 +125,5 @@ def test_agent_raises_when_no_text_from_pdf_or_ocr():
     empty_pages = [DocumentPage(page_number=1, text="")]
     agent = build_agent(FakePdfReader(empty_pages), ocr=FakeOCR([]))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(UnreadableDocumentError):
         agent.run("blank.pdf")
