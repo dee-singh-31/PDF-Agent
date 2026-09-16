@@ -1,11 +1,22 @@
 import sys
 
+from pdf_agent.application.agent import ExpiryAgent
 from pdf_agent.application.date_candidate_extractor import DateCandidateExtractor
-from pdf_agent.application.expiry_service import ExpiryExtractionService
 from pdf_agent.application.expiry_validator import ExpiryCandidateValidator
-from pdf_agent.application.ports.llm import OllamaLLM
-from pdf_agent.application.ports.ocr import TesseractOCR
-from pdf_agent.application.ports.pdf_reader import PdfTextReader
+from pdf_agent.config import Settings
+from pdf_agent.infrastructure.llm import OllamaLLM
+from pdf_agent.infrastructure.ocr import TesseractOCR
+from pdf_agent.infrastructure.pdf_reader import PdfTextReader
+
+
+def build_agent(settings: Settings) -> ExpiryAgent:
+    return ExpiryAgent(
+        pdf_reader=PdfTextReader(),
+        ocr=TesseractOCR(poppler_path=settings.poppler_path),
+        llm=OllamaLLM(model=settings.ollama_model),
+        validator=ExpiryCandidateValidator(),
+        date_extractor=DateCandidateExtractor(),
+    )
 
 
 def main():
@@ -15,21 +26,9 @@ def main():
 
     pdf_path = sys.argv[1]
 
-    pdf_reader = PdfTextReader()
-    ocr = TesseractOCR()
-    llm = OllamaLLM()
-    validator = ExpiryCandidateValidator()
-    date_extractor = DateCandidateExtractor()
+    agent = build_agent(Settings())
 
-    service = ExpiryExtractionService(
-        pdf_reader=pdf_reader,
-        ocr=ocr,
-        llm=llm,
-        validator=validator,
-        date_extractor=date_extractor,
-    )
-
-    result = service.extract(pdf_path)
+    result = agent.run(pdf_path)
 
     if result.expiry_date:
         print(f"Expiry Date: {result.expiry_date}")
